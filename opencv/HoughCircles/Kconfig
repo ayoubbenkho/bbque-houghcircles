@@ -1,0 +1,12 @@
+
+config SAMPLES_OPENCV_HOUGHCIRCLES
+  bool "HoughCircles"
+  default n
+  select BOSP_SAMPLES_OPENCV
+  ---help---
+  Build the HoughCircles application.
+  
+  Insert here a description of this application.
+
+  If unsure, say No to this option.
+
