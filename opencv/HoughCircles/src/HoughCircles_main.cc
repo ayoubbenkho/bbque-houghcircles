@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
 			default_value(50),
 			"Number of jobs to perform")
 
-		("min_radius,r", po::value<int>(&min_radius)->
+		("min_radius,i", po::value<int>(&min_radius)->
 			default_value(1),
 			"Minimum radius to be detected")
 

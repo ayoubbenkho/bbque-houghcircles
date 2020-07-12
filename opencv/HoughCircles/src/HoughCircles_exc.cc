@@ -109,7 +109,7 @@ RTLIB_ExitCode_t HoughCircles::onMonitor() {
 	int quality_of_service = max_radius - min_radius - min_dist;
 
 	if (quality_of_service < 10)
-		logger->Notice("[onMonitor]: Medium QoS (%d) on cycle %d",
+		logger->Notice("[onMonitor]: Low QoS (%d) on cycle %d",
 						quality_of_service, Cycles());
 	else if ( quality_of_service < 20 )
 		logger->Notice("[onMonitor]: Medium QoS (%d) on cycle %d",
