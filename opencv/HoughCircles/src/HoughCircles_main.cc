@@ -91,6 +91,7 @@ int min_dist;
 int max_radius;
 int min_radius;
 int jobs_number;
+bool slow_mode;
 
 void ParseCommandLine(int argc, char *argv[]) {
 	// Parse command line params
@@ -174,6 +175,11 @@ int main(int argc, char *argv[]) {
 			default_value(16),
 			"Minimum distance between detected centers")
 
+
+		("slow_mode,s", po::value<bool>(&slow_mode)->
+			default_value(0),
+			"Slow mode : CPS between 1 and 2, does not work in unmanaged mode")
+
 	;
 
 	// Setup a logger
@@ -205,7 +211,7 @@ int main(int argc, char *argv[]) {
 	if (max_radius > 100) max_radius = 100;
 	if (min_dist > 64) max_radius = 64;
 
-	pexc = std::make_shared<HoughCircles>("HoughCircles", filename, threads_number, upper_threshold, center_threshold, min_dist, max_radius, min_radius, jobs_number, recipe, rtlib);
+	pexc = std::make_shared<HoughCircles>("HoughCircles", filename, threads_number, upper_threshold, center_threshold, min_dist, max_radius, min_radius, jobs_number, slow_mode, recipe, rtlib);
 	if (!pexc->isRegistered()) {
 		logger->Fatal("Registering failure.");
 		return RTLIB_ERROR;

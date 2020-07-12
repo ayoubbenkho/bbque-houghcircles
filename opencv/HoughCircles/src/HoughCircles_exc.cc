@@ -36,6 +36,7 @@ HoughCircles::HoughCircles(std::string const & name,
 		int max_radius,
 		int min_radius,
 		int jobs_number,
+		bool slow_mode,
 		std::string const & recipe,
 		RTLIB_Services_t *rtlib) :
 	BbqueEXC(name, recipe, rtlib),
@@ -46,7 +47,8 @@ HoughCircles::HoughCircles(std::string const & name,
 	min_radius(min_radius),
 	min_dist(min_dist),
 	max_radius(max_radius),
-	threads_number(threads_number) {
+	threads_number(threads_number),
+	slow_mode(slow_mode) {
 
 	logger->Warn("New HoughCircles::HoughCircles()");
 	logger->Info("EXC Unique IDentifier (UID): %u", GetUniqueID());
@@ -56,6 +58,9 @@ HoughCircles::HoughCircles(std::string const & name,
 RTLIB_ExitCode_t HoughCircles::onSetup() {
 
 	logger->Warn("HoughCircles::onSetup()");
+
+	if (slow_mode)
+		SetCPSGoal(1,2);
 
 	img = imread(filename, IMREAD_COLOR);
 	if(img.empty())
@@ -74,13 +79,14 @@ RTLIB_ExitCode_t HoughCircles::onConfigure(int8_t awm_id) {
 	logger->Warn("HoughCircles::onConfigure(): EXC [%s] => AWM [%02d]",
 		exc_name.c_str(), awm_id);
 
-	int32_t proc_quota, proc_nr, mem;
+	int32_t proc_quota, proc_nr, mem, gpu_nr;
 	GetAssignedResources(PROC_ELEMENT, proc_quota);
 	GetAssignedResources(PROC_NR, proc_nr);
 	GetAssignedResources(MEMORY, mem);
+	GetAssignedResources(GPU, gpu_nr);
 	logger->Notice("MayApp::onConfigure(): "
-		"EXC [%s], AWM[%02d] => R<PROC_quota>=%3d, R<PROC_nr>=%2d, R<MEM>=%3d",
-		exc_name.c_str(), awm_id, proc_quota, proc_nr, mem);
+		"EXC [%s], AWM[%02d] => R<PROC_quota>=%3d, R<PROC_nr>=%2d, R<MEM>=%3d, R<GPU>=%3d",
+		exc_name.c_str(), awm_id, proc_quota, proc_nr, mem, gpu_nr);
 
 	return RTLIB_OK;
 }
