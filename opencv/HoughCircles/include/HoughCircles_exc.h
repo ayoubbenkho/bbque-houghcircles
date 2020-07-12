@@ -28,14 +28,31 @@ using bbque::rtlib::BbqueEXC;
 
 class HoughCircles : public BbqueEXC {
 
+
+std::string filename;
+int threads_number;
+int upper_threshold;
+int center_threshold;
+int min_radius;
+int max_radius;
+int min_dist;
+int jobs_number;
+int jobs_done = 0;
+std::vector<std::thread> threads_container;
+
 public:
 
 	HoughCircles(std::string const & name,
 			std::string filename,
+			int threads_number,
+			int upper_threshold,
+			int center_threshold,
+			int min_dist,
+			int max_radius,
+			int min_radius,
+			int jobs_number,
 			std::string const & recipe,
 			RTLIB_Services_t *rtlib);
-
-	std::string filename;
 
 private:
 
@@ -45,6 +62,7 @@ private:
 	RTLIB_ExitCode_t onMonitor();
 	RTLIB_ExitCode_t onSuspend();
 	RTLIB_ExitCode_t onRelease();
+	size_t Work();
 };
 
 #endif // HOUGHCIRCLES_EXC_H_

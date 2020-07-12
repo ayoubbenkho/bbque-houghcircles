@@ -4,6 +4,8 @@
 
 cmake_minimum_required(VERSION 3.0)
 
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+
 #----- Check for the required RTLib library
 find_package(BbqRTLib REQUIRED)
 

@@ -20,6 +20,8 @@
 #include <cstdio>
 #include <bbque/utils/utility.h>
 
+#include <math.h>
+
 using namespace cv;
 
 Mat gray, img;
@@ -27,9 +29,24 @@ std::vector<Vec3f> circles;
 
 HoughCircles::HoughCircles(std::string const & name,
 		std::string filename,
+		int threads_number,
+		int upper_threshold,
+		int center_threshold,
+		int min_dist,
+		int max_radius,
+		int min_radius,
+		int jobs_number,
 		std::string const & recipe,
 		RTLIB_Services_t *rtlib) :
-	BbqueEXC(name, recipe, rtlib),filename(filename) {
+	BbqueEXC(name, recipe, rtlib),
+	filename(filename),
+	jobs_number(jobs_number),
+	center_threshold(center_threshold),
+	upper_threshold(upper_threshold),
+	min_radius(min_radius),
+	min_dist(min_dist),
+	max_radius(max_radius),
+	threads_number(threads_number) {
 
 	logger->Warn("New HoughCircles::HoughCircles()");
 	logger->Info("EXC Unique IDentifier (UID): %u", GetUniqueID());
@@ -37,19 +54,17 @@ HoughCircles::HoughCircles(std::string const & name,
 }
 
 RTLIB_ExitCode_t HoughCircles::onSetup() {
-	// This is just an empty method in the current implementation of this
-	// testing application. However, this is intended to collect all the
-	// application specific initialization code, especially the code which
-	// acquire system resources (e.g. thread creation)
+
 	logger->Warn("HoughCircles::onSetup()");
 
 	img = imread(filename, IMREAD_COLOR);
-	std::cout<<filename<<std::endl;
 	if(img.empty())
     {
         logger->Fatal("Image not found.");
         return RTLIB_ERROR;
     }
+	cvtColor(img, gray, COLOR_BGR2GRAY);
+    medianBlur(gray, gray, 5);
 	
 	return RTLIB_OK;
 }
@@ -72,25 +87,14 @@ RTLIB_ExitCode_t HoughCircles::onConfigure(int8_t awm_id) {
 
 RTLIB_ExitCode_t HoughCircles::onRun() {
 	RTLIB_WorkingModeParams_t const wmp = WorkingModeParams();
-    
-    cvtColor(img, gray, COLOR_BGR2GRAY);
-    medianBlur(gray, gray, 5);
-    cv::HoughCircles(gray, circles, HOUGH_GRADIENT, 1,
-                 gray.rows/16, // change this value to detect circles with different distances to each other
-                 100, 30, 1, 30 // change the last two parameters
-                                // (min_radius & max_radius) to detect larger circles
-                 );
-    for( size_t i = 0; i < circles.size(); i++ )
-    {
-        Vec3i c = circles[i];
-        circle( img, Point(c[0], c[1]), c[2], Scalar(0,0,255), 3, LINE_AA);
-        circle( img, Point(c[0], c[1]), 2, Scalar(0,255,0), 3, LINE_AA);
-    }
+ 
+    for (int i = 0; i < threads_number; ++i)
+    	threads_container.push_back(std::thread(&HoughCircles::Work, this));
 
-	// Return after 5 cycles
-	if (Cycles() >= 5)
-		return RTLIB_EXC_WORKLOAD_NONE;
+    for (auto &thread : threads_container)
+    	thread.join();
 
+    threads_container.clear();
 
 	// Do one more cycle
 	logger->Warn("HoughCircles::onRun()      : EXC [%s]  @ AWM [%02d]",
@@ -102,9 +106,27 @@ RTLIB_ExitCode_t HoughCircles::onRun() {
 RTLIB_ExitCode_t HoughCircles::onMonitor() {
 	RTLIB_WorkingModeParams_t const wmp = WorkingModeParams();
 
+	int quality_of_service = max_radius - min_radius - min_dist;
+
+	if (quality_of_service < 10)
+		logger->Notice("[onMonitor]: Medium QoS (%d) on cycle %d",
+						quality_of_service, Cycles());
+	else if ( quality_of_service < 20 )
+		logger->Notice("[onMonitor]: Medium QoS (%d) on cycle %d",
+						quality_of_service, Cycles());
+	else
+		logger->Notice("[onMonitor]: High QoS (%d) on cycle %d",
+						quality_of_service, Cycles());      
+
+
 	logger->Warn("HoughCircles::onMonitor()  : EXC [%s]  @ AWM [%02d] "
 			"=> cycles [%d], CPS = %.2f",
 		exc_name.c_str(), wmp.awm_id, Cycles(), GetCPS());
+
+	if (jobs_done >= jobs_number) return RTLIB_EXC_WORKLOAD_NONE;
+
+	if (jobs_number - jobs_done < threads_number)
+		threads_number = jobs_number - jobs_done;
 
 	return RTLIB_OK;
 }
@@ -124,4 +146,23 @@ RTLIB_ExitCode_t HoughCircles::onRelease() {
 	logger->Warn("HoughCircles::onRelease()  : exit");
 
 	return RTLIB_OK;
+}
+
+size_t HoughCircles::Work(){
+
+	cv::HoughCircles(gray, circles, HOUGH_GRADIENT, 1,
+                 gray.rows/min_dist, 
+                 upper_threshold, center_threshold, 
+                 min_radius, max_radius
+                 );
+    for( size_t i = 0; i < circles.size(); i++ )
+    {
+        Vec3i c = circles[i];
+        circle( img, Point(c[0], c[1]), c[2], Scalar(0,0,255), 3, LINE_AA);
+        circle( img, Point(c[0], c[1]), 2, Scalar(0,255,0), 3, LINE_AA);
+    }
+
+    jobs_done++;
+
+    return circles.size();
 }

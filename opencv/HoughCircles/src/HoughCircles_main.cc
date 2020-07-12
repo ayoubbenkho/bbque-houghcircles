@@ -19,6 +19,7 @@
 #include <random>
 #include <cstring>
 #include <memory>
+#include <vector>
 
 #include <libgen.h>
 
@@ -83,6 +84,14 @@ std::string filename;
  */
 pBbqueEXC_t pexc;
 
+int threads_number;
+int upper_threshold;
+int center_threshold;
+int min_dist;
+int max_radius;
+int min_radius;
+int jobs_number;
+
 void ParseCommandLine(int argc, char *argv[]) {
 	// Parse command line params
 	try {
@@ -135,7 +144,36 @@ int main(int argc, char *argv[]) {
 
 		("filename,f", po::value<std::string>(&filename)-> 
 			default_value("jo.jpg"), 
-			"image to process")
+			"Image to process")
+
+		("threads,t", po::value<int>(&threads_number)->
+			default_value(1),
+			"Number of threads to exploit")
+
+		("center_threshold,c", po::value<int>(&center_threshold)->
+			default_value(30),
+			"Threshold for center detection")
+
+		("upper_threshold,u", po::value<int>(&upper_threshold)->
+			default_value(100),
+			"Upper threshold for the internal Canny edge detector")
+
+		("jobs,j", po::value<int>(&jobs_number)->
+			default_value(50),
+			"Number of jobs to perform")
+
+		("min_radius,r", po::value<int>(&min_radius)->
+			default_value(1),
+			"Minimum radius to be detected")
+
+		("max_radius,a", po::value<int>(&max_radius)->
+			default_value(30),
+			"Maximum radius to be detected")
+
+		("min_dist,m", po::value<int>(&min_dist)->
+			default_value(16),
+			"Minimum distance between detected centers")
+
 	;
 
 	// Setup a logger
@@ -160,7 +198,14 @@ int main(int argc, char *argv[]) {
 
 	assert(rtlib);
 	logger->Info("STEP 1. Registering EXC with recipe <%s>...", recipe.c_str());
-	pexc = std::make_shared<HoughCircles>("HoughCircles", filename, recipe, rtlib);
+
+	if (upper_threshold > 500) upper_threshold = 500;
+	if (center_threshold > 250) center_threshold = 250;
+	if (min_radius < 0) min_radius = 0;
+	if (max_radius > 100) max_radius = 100;
+	if (min_dist > 64) max_radius = 64;
+
+	pexc = std::make_shared<HoughCircles>("HoughCircles", filename, threads_number, upper_threshold, center_threshold, min_dist, max_radius, min_radius, jobs_number, recipe, rtlib);
 	if (!pexc->isRegistered()) {
 		logger->Fatal("Registering failure.");
 		return RTLIB_ERROR;
