@@ -76,7 +76,7 @@ RTLIB_ExitCode_t HoughCircles::onSetup() {
 
 RTLIB_ExitCode_t HoughCircles::onConfigure(int8_t awm_id) {
 
-	logger->Warn("HoughCircles::onConfigure(): EXC [%s] => AWM [%02d]",
+	logger->Warn("HoughCircles::onConfigure(): EXC [%s] => AWM [%02d]", 
 		exc_name.c_str(), awm_id);
 
 	int32_t proc_quota, proc_nr, mem, gpu_nr;
@@ -84,9 +84,18 @@ RTLIB_ExitCode_t HoughCircles::onConfigure(int8_t awm_id) {
 	GetAssignedResources(PROC_NR, proc_nr);
 	GetAssignedResources(MEMORY, mem);
 	GetAssignedResources(GPU, gpu_nr);
-	logger->Notice("MayApp::onConfigure(): "
+
+
+	logger->Notice("HoughCircles::onConfigure(): "
 		"EXC [%s], AWM[%02d] => R<PROC_quota>=%3d, R<PROC_nr>=%2d, R<MEM>=%3d, R<GPU>=%3d",
 		exc_name.c_str(), awm_id, proc_quota, proc_nr, mem, gpu_nr);
+
+	if (proc_quota >= 100)
+		threads_number = proc_quota / 100;
+	else if (proc_quota != -1)
+		threads_number = 1;
+
+	logger->Notice("HoughCircles: %d thread(s)", threads_number);
 
 	return RTLIB_OK;
 }
