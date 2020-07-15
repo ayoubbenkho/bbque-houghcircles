@@ -36,7 +36,7 @@ HoughCircles::HoughCircles(std::string const & name,
 		int max_radius,
 		int min_radius,
 		int jobs_number,
-		bool slow_mode,
+		unsigned int cps_goal,
 		std::string const & recipe,
 		RTLIB_Services_t *rtlib) :
 	BbqueEXC(name, recipe, rtlib),
@@ -48,7 +48,7 @@ HoughCircles::HoughCircles(std::string const & name,
 	min_dist(min_dist),
 	max_radius(max_radius),
 	threads_number(threads_number),
-	slow_mode(slow_mode) {
+	cps_goal(cps_goal) {
 
 	logger->Warn("New HoughCircles::HoughCircles()");
 	logger->Info("EXC Unique IDentifier (UID): %u", GetUniqueID());
@@ -59,8 +59,8 @@ RTLIB_ExitCode_t HoughCircles::onSetup() {
 
 	logger->Warn("HoughCircles::onSetup()");
 
-	if (slow_mode)
-		SetCPSGoal(1,2);
+	if (cps_goal > 0)
+		SetCPSGoal(cps_goal-1, cps_goal+1);
 
 	img = imread(filename, IMREAD_COLOR);
 	if(img.empty())

@@ -37,7 +37,7 @@ int min_radius;
 int max_radius;
 int min_dist;
 int jobs_number;
-bool slow_mode;
+unsigned int cps_goal;
 int jobs_done = 0;
 std::vector<std::thread> threads_container;
 
@@ -52,7 +52,7 @@ public:
 			int max_radius,
 			int min_radius,
 			int jobs_number,
-			bool slow_mode,
+			unsigned int cps_goal,
 			std::string const & recipe,
 			RTLIB_Services_t *rtlib);
 

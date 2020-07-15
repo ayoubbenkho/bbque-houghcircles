@@ -91,7 +91,7 @@ int min_dist;
 int max_radius;
 int min_radius;
 int jobs_number;
-bool slow_mode;
+unsigned int cps_goal;
 
 void ParseCommandLine(int argc, char *argv[]) {
 	// Parse command line params
@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
 
 		("threads,t", po::value<int>(&threads_number)->
 			default_value(1),
-			"Number of threads to exploit")
+			"Number of threads to exploit, works only in unmanaged mode")
 
 		("center_threshold,c", po::value<int>(&center_threshold)->
 			default_value(30),
@@ -176,9 +176,9 @@ int main(int argc, char *argv[]) {
 			"Minimum distance between detected centers")
 
 
-		("slow_mode,s", po::value<bool>(&slow_mode)->
+		("cps_goal,s", po::value<unsigned int>(&cps_goal)->
 			default_value(0),
-			"Slow mode : CPS between 1 and 2, does not work in unmanaged mode")
+			"Cycles-per-second (CPS) goal")
 
 	;
 
@@ -211,7 +211,7 @@ int main(int argc, char *argv[]) {
 	if (max_radius > 100) max_radius = 100;
 	if (min_dist > 64) max_radius = 64;
 
-	pexc = std::make_shared<HoughCircles>("HoughCircles", filename, threads_number, upper_threshold, center_threshold, min_dist, max_radius, min_radius, jobs_number, slow_mode, recipe, rtlib);
+	pexc = std::make_shared<HoughCircles>("HoughCircles", filename, threads_number, upper_threshold, center_threshold, min_dist, max_radius, min_radius, jobs_number, cps_goal, recipe, rtlib);
 	if (!pexc->isRegistered()) {
 		logger->Fatal("Registering failure.");
 		return RTLIB_ERROR;
